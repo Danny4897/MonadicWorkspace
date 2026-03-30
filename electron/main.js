@@ -4,18 +4,16 @@ const path = require('path')
 const http = require('http')
 const fs = require('fs')
 
-// ── Configurazione ────────────────────────────────────────────
 const IS_DEV = process.env.NODE_ENV === 'development'
 
+// Studio = indice 0 (default), poi Planner, Dashboard
 const SERVICES = [
   {
-    name: 'dashboard',
-    backendPort: 3001,
-    frontendPort: 5173,
-    frontendUrl: IS_DEV ? 'http://localhost:5173' : null,
+    name: 'studio',
+    backendPort: 3003,
+    frontendPort: 5175,
+    frontendUrl: IS_DEV ? 'http://localhost:5175' : null,
     backendEntry: 'dist/index.js',
-    color: '#00ff88',
-    label: 'Dashboard',
   },
   {
     name: 'planner',
@@ -23,17 +21,13 @@ const SERVICES = [
     frontendPort: 5174,
     frontendUrl: IS_DEV ? 'http://localhost:5174' : null,
     backendEntry: 'dist/index.js',
-    color: '#f0b429',
-    label: 'Planner',
   },
   {
-    name: 'studio',
-    backendPort: 3003,
-    frontendPort: 5175,
-    frontendUrl: IS_DEV ? 'http://localhost:5175' : null,
+    name: 'dashboard',
+    backendPort: 3001,
+    frontendPort: 5173,
+    frontendUrl: IS_DEV ? 'http://localhost:5173' : null,
     backendEntry: 'dist/index.js',
-    color: '#a78bfa',
-    label: 'Studio',
   },
 ]
 
@@ -41,71 +35,91 @@ const childProcesses = []
 let mainWindow = null
 let splashWindow = null
 let views = []
-let activeTabIndex = 0
 
 // ── Path helpers ──────────────────────────────────────────────
 function getBackendPath(serviceName) {
-  if (IS_DEV) {
-    return path.join(__dirname, '..', 'apps', serviceName, 'backend')
-  }
+  if (IS_DEV) return path.join(__dirname, '..', 'apps', serviceName, 'backend')
   return path.join(process.resourcesPath, 'backends', serviceName)
 }
 
-function getFrontendUrl(service) {
-  if (IS_DEV) return service.frontendUrl
-  // In produzione serve i file statici via file:// protocol
-  const frontendPath = path.join(process.resourcesPath, 'frontends', service.name, 'index.html')
-  return `file://${frontendPath}`
+function getFrontendPath(service) {
+  if (IS_DEV) return null
+  return path.join(process.resourcesPath, 'frontends', service.name)
+}
+
+// ── Patch fetch/XHR/WebSocket per file:// protocol ───────────
+function buildApiPatch(service) {
+  const port = service.backendPort
+  const wsPort = service.backendPort
+  return `
+(function() {
+  var port = ${port};
+  var wsPort = ${wsPort};
+
+  // Patch fetch
+  var _fetch = window.fetch;
+  window.fetch = function(input, init) {
+    if (typeof input === 'string' && input.startsWith('/')) {
+      input = 'http://localhost:' + port + input;
+    } else if (input && typeof input === 'object' && input.url && input.url.startsWith('/')) {
+      input = new Request('http://localhost:' + port + input.url, input);
+    }
+    return _fetch.call(this, input, init);
+  };
+
+  // Patch XMLHttpRequest (axios)
+  var _open = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+    if (typeof url === 'string' && url.startsWith('/')) {
+      url = 'http://localhost:' + port + url;
+    }
+    return _open.call(this, method, url, async, user, pass);
+  };
+
+  // Patch WebSocket (studio)
+  var _WS = window.WebSocket;
+  window.WebSocket = function(url, protocols) {
+    if (!url || url === 'ws://' || url === 'wss://' || url.endsWith('://')) {
+      url = 'ws://localhost:' + wsPort;
+    } else if (typeof url === 'string' && url.startsWith('/')) {
+      url = 'ws://localhost:' + wsPort + url;
+    }
+    return protocols ? new _WS(url, protocols) : new _WS(url);
+  };
+  window.WebSocket.prototype = _WS.prototype;
+  window.WebSocket.CONNECTING = _WS.CONNECTING;
+  window.WebSocket.OPEN = _WS.OPEN;
+  window.WebSocket.CLOSING = _WS.CLOSING;
+  window.WebSocket.CLOSED = _WS.CLOSED;
+})();
+`
 }
 
 // ── Avvio backend ─────────────────────────────────────────────
 function startBackend(service) {
   const backendPath = getBackendPath(service.name)
   const entryPoint = path.join(backendPath, service.backendEntry)
-
-  console.log(`[${service.name}] Starting backend: ${entryPoint}`)
-
   const nodeModulesPath = path.join(backendPath, 'node_modules')
   const distExists = fs.existsSync(entryPoint)
 
   if (!fs.existsSync(nodeModulesPath)) {
-    console.log(`[${service.name}] Installing dependencies...`)
-    const npmInstall = spawn('npm', ['install', '--omit=dev'], {
-      cwd: backendPath,
-      shell: true,
-      stdio: 'inherit',
-    })
+    const npmInstall = spawn('npm', ['install', '--omit=dev'], { cwd: backendPath, shell: true, stdio: 'inherit' })
     npmInstall.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`[${service.name}] npm install failed`)
-        return
-      }
+      if (code !== 0) return console.error(`[${service.name}] npm install failed`)
       if (!distExists) compileThenStart(service, entryPoint, backendPath)
       else startNodeProcess(service, entryPoint, backendPath)
     })
     return
   }
 
-  if (!distExists) {
-    compileThenStart(service, entryPoint, backendPath)
-    return
-  }
-
+  if (!distExists) { compileThenStart(service, entryPoint, backendPath); return }
   startNodeProcess(service, entryPoint, backendPath)
 }
 
 function compileThenStart(service, entryPoint, backendPath) {
-  console.log(`[${service.name}] Compiling TypeScript...`)
-  const tsc = spawn('npx', ['tsc', '--skipLibCheck'], {
-    cwd: backendPath,
-    shell: true,
-    stdio: 'inherit',
-  })
+  const tsc = spawn('npx', ['tsc', '--skipLibCheck'], { cwd: backendPath, shell: true, stdio: 'inherit' })
   tsc.on('close', (code) => {
-    if (code !== 0) {
-      console.error(`[${service.name}] TypeScript compilation failed`)
-      return
-    }
+    if (code !== 0) return console.error(`[${service.name}] TypeScript compilation failed`)
     startNodeProcess(service, entryPoint, backendPath)
   })
 }
@@ -114,17 +128,10 @@ function startNodeProcess(service, entryPoint, cwd) {
   const child = spawn('node', [entryPoint], {
     cwd,
     shell: false,
-    env: {
-      ...process.env,
-      PORT: String(service.backendPort),
-      NODE_ENV: 'production',
-    },
+    env: { ...process.env, PORT: String(service.backendPort), NODE_ENV: 'production' },
   })
-
   child.stdout.on('data', (d) => console.log(`[${service.name}]`, d.toString().trim()))
   child.stderr.on('data', (d) => console.error(`[${service.name}] ERR`, d.toString().trim()))
-  child.on('exit', (code) => console.log(`[${service.name}] exited with code ${code}`))
-
   childProcesses.push(child)
 }
 
@@ -142,14 +149,14 @@ function waitForBackend(port, retries = 30) {
     }
     const retry = () => {
       attempts++
-      if (attempts >= retries) return reject(new Error(`Backend :${port} non risponde dopo ${retries}s`))
+      if (attempts >= retries) return reject(new Error(`Backend :${port} non risponde`))
       setTimeout(check, 1000)
     }
     check()
   })
 }
 
-// ── Splash screen ─────────────────────────────────────────────
+// ── Splash standalone ─────────────────────────────────────────
 function createSplash() {
   splashWindow = new BrowserWindow({
     width: 480,
@@ -163,7 +170,7 @@ function createSplash() {
   splashWindow.center()
 }
 
-// ── Finestra principale ────────────────────────────────────────
+// ── Finestra principale VSCode-style ──────────────────────────
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -171,7 +178,7 @@ function createMainWindow() {
     minWidth: 1024,
     minHeight: 700,
     title: 'MonadicWorkspace',
-    backgroundColor: '#0d1117',
+    backgroundColor: '#1e1e1e',
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -180,47 +187,47 @@ function createMainWindow() {
     },
   })
 
-  mainWindow.loadFile(path.join(__dirname, 'splash.html'))
+  mainWindow.loadFile(path.join(__dirname, 'shell.html'))
 
-  // Crea una BrowserView per ogni servizio
+  // Crea BrowserView per ogni servizio con patch API iniettata
   views = SERVICES.map((service) => {
     const view = new BrowserView({
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
+      webPreferences: { nodeIntegration: false, contextIsolation: false },
     })
-    const url = getFrontendUrl(service)
-    view.webContents.loadURL(url)
+
+    // Inietta patch PRIMA che React faccia chiamate API
+    view.webContents.on('did-finish-load', () => {
+      view.webContents.executeJavaScript(buildApiPatch(service)).catch(console.error)
+    })
+
+    const frontendPath = getFrontendPath(service)
+    if (IS_DEV) {
+      view.webContents.loadURL(service.frontendUrl)
+    } else {
+      view.webContents.loadFile(path.join(frontendPath, 'index.html'))
+    }
+
     return view
   })
 
-  // Mostra dashboard di default
+  // Studio (indice 0) di default
   mainWindow.setBrowserView(views[0])
   resizeActiveView()
-
   mainWindow.on('resize', resizeActiveView)
 
-  // Cambio tab via IPC
-  ipcMain.on('switch-tab', (_event, tabIndex) => {
-    if (tabIndex < 0 || tabIndex >= views.length) return
-    activeTabIndex = tabIndex
-    mainWindow.setBrowserView(views[tabIndex])
+  ipcMain.on('switch-view', (_event, index) => {
+    if (index < 0 || index >= views.length) return
+    mainWindow.setBrowserView(views[index])
     resizeActiveView()
   })
 
   mainWindow.once('ready-to-show', () => {
-    if (splashWindow) {
-      splashWindow.close()
-      splashWindow = null
-    }
+    if (splashWindow) { splashWindow.close(); splashWindow = null }
     mainWindow.show()
     mainWindow.maximize()
   })
 
-  mainWindow.on('closed', () => {
-    mainWindow = null
-  })
+  mainWindow.on('closed', () => { mainWindow = null })
 }
 
 function resizeActiveView() {
@@ -228,26 +235,21 @@ function resizeActiveView() {
   const view = mainWindow.getBrowserView()
   if (!view) return
   const [width, height] = mainWindow.getContentSize()
-  const TAB_BAR_HEIGHT = 48
-  view.setBounds({ x: 0, y: TAB_BAR_HEIGHT, width, height: height - TAB_BAR_HEIGHT })
+  const SIDEBAR_WIDTH = 48
+  view.setBounds({ x: SIDEBAR_WIDTH, y: 0, width: width - SIDEBAR_WIDTH, height })
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────
 app.whenReady().then(async () => {
   createSplash()
 
-  // In dev mode i backend girano già — salta l'avvio
-  if (!IS_DEV) {
-    SERVICES.forEach(startBackend)
-  }
+  if (!IS_DEV) SERVICES.forEach(startBackend)
 
-  // Attendi che i backend siano pronti
   try {
     await Promise.all(SERVICES.map((s) => waitForBackend(s.backendPort)))
     console.log('All backends ready.')
   } catch (err) {
     console.error('Backend startup warning:', err.message)
-    // Procedi comunque — l'utente vedrà un errore nel frontend
   }
 
   createMainWindow()
