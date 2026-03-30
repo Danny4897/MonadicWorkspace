@@ -9,6 +9,9 @@
     "dev:planner": "npm run dev --prefix apps/planner",
     "dev:studio": "npm run dev --prefix apps/studio",
     "build:all": "npm run build --prefix packages/shared && npm run build --prefix apps/dashboard && npm run build --prefix apps/planner && npm run build --prefix apps/studio",
+    "build:frontends": "npm run build --prefix apps/dashboard/frontend && npm run build --prefix apps/planner/frontend && npm run build --prefix apps/studio/frontend",
+    "electron:dev": "NODE_ENV=development electron electron/main.js",
+    "electron:build": "cd electron && npm run build:win",
     "submodule:update": "git submodule update --remote --merge",
     "status": "cd apps/agent-cli && dotnet run -- status"
   },

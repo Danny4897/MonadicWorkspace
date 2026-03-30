@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MonadicWorkspace</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      height: 48px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 4px;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 16px;
+      -webkit-app-region: no-drag;
+      user-select: none;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 8px #00ff88;
+    }
+
+    .logo-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #00ff88;
+      letter-spacing: 0.5px;
+    }
+
+    .tab {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #8b949e;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+      -webkit-app-region: no-drag;
+      outline: none;
+    }
+
+    .tab:hover {
+      background: #21262d;
+      color: #e6edf3;
+    }
+
+    .tab.active {
+      background: #0d1117;
+      border-color: #30363d;
+      color: #e6edf3;
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Splash */
+    .splash {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .splash-logo {
+      font-size: 32px;
+      font-weight: 700;
+      color: #00ff88;
+      letter-spacing: -1px;
+    }
+
+    .splash-logo span { color: #e6edf3; }
+
+    .splash-sub {
+      font-size: 14px;
+      color: #8b949e;
+    }
+
+    .loader {
+      width: 200px;
+      height: 3px;
+      background: #21262d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loader-bar {
+      height: 100%;
+      background: #00ff88;
+      border-radius: 2px;
+      animation: load 2s ease-in-out infinite;
+    }
+
+    @keyframes load {
+      0%   { width: 0%;  margin-left: 0; }
+      50%  { width: 60%; margin-left: 20%; }
+      100% { width: 0%;  margin-left: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="tab-bar">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span class="logo-text">MonadicWorkspace</span>
+    </div>
+    <button class="tab active" onclick="switchTab(0, this)">
+      <div class="tab-dot" style="background:#00ff88"></div>
+      Dashboard
+    </button>
+    <button class="tab" onclick="switchTab(1, this)">
+      <div class="tab-dot" style="background:#f0b429"></div>
+      Planner
+    </button>
+    <button class="tab" onclick="switchTab(2, this)">
+      <div class="tab-dot" style="background:#a78bfa"></div>
+      Studio
+    </button>
+  </div>
+
+  <div class="splash" id="splash">
+    <div class="splash-logo">Monadic<span>Workspace</span></div>
+    <div class="splash-sub">Avvio dei servizi in corso…</div>
+    <div class="loader"><div class="loader-bar"></div></div>
+  </div>
+
+  <script>
+    function switchTab(index, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      el.classList.add('active')
+      if (window.monadicApp) window.monadicApp.switchTab(index)
+    }
+  </script>
+</body>
+</html>

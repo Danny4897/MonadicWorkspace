@@ -1,0 +1,78 @@
+{
+  "name": "monadic-workspace-desktop",
+  "version": "0.1.0",
+  "description": "MonadicWorkspace — Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:all": "electron-builder --win --mac --linux"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "dev.danny4897.monadicworkspace",
+    "productName": "MonadicWorkspace",
+    "copyright": "MIT © Danny4897",
+    "icon": "assets/icon.png",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.png",
+      "shortcutName": "MonadicWorkspace"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "splash.html",
+      "assets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../apps/dashboard/backend",
+        "to": "backends/dashboard",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "../apps/planner/backend",
+        "to": "backends/planner",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "../apps/studio/backend",
+        "to": "backends/studio",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "../apps/dashboard/frontend/dist",
+        "to": "frontends/dashboard"
+      },
+      {
+        "from": "../apps/planner/frontend/dist",
+        "to": "frontends/planner"
+      },
+      {
+        "from": "../apps/studio/frontend/dist",
+        "to": "frontends/studio"
+      }
+    ]
+  }
+}
