@@ -161,6 +161,13 @@
   </div>
 
   <script>
+    // Se siamo nella finestra principale (preload iniettato) nascondi il loader
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.monadicApp) {
+        document.getElementById('splash').style.display = 'none'
+      }
+    })
+
     function switchTab(index, el) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
       el.classList.add('active')

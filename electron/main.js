@@ -66,6 +66,8 @@ function startBackend(service) {
   console.log(`[${service.name}] Starting backend: ${entryPoint}`)
 
   const nodeModulesPath = path.join(backendPath, 'node_modules')
+  const distExists = fs.existsSync(entryPoint)
+
   if (!fs.existsSync(nodeModulesPath)) {
     console.log(`[${service.name}] Installing dependencies...`)
     const npmInstall = spawn('npm', ['install', '--omit=dev'], {
@@ -73,11 +75,39 @@ function startBackend(service) {
       shell: true,
       stdio: 'inherit',
     })
-    npmInstall.on('close', () => startNodeProcess(service, entryPoint, backendPath))
+    npmInstall.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`[${service.name}] npm install failed`)
+        return
+      }
+      if (!distExists) compileThenStart(service, entryPoint, backendPath)
+      else startNodeProcess(service, entryPoint, backendPath)
+    })
+    return
+  }
+
+  if (!distExists) {
+    compileThenStart(service, entryPoint, backendPath)
     return
   }
 
   startNodeProcess(service, entryPoint, backendPath)
+}
+
+function compileThenStart(service, entryPoint, backendPath) {
+  console.log(`[${service.name}] Compiling TypeScript...`)
+  const tsc = spawn('npx', ['tsc', '--skipLibCheck'], {
+    cwd: backendPath,
+    shell: true,
+    stdio: 'inherit',
+  })
+  tsc.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`[${service.name}] TypeScript compilation failed`)
+      return
+    }
+    startNodeProcess(service, entryPoint, backendPath)
+  })
 }
 
 function startNodeProcess(service, entryPoint, cwd) {
