@@ -1,5 +1,5 @@
-; Sovrascrive il check "app in esecuzione" di NSIS — killa silenziosamente invece di mostrare il dialog
-!macro customCheckAppRunning
-  ExecWait 'taskkill /F /IM "${APP_FILENAME}.exe" /T'
+; Killa il processo prima dell'installazione
+!macro customInit
+  ExecWait 'taskkill /F /IM "MonadicWorkspace.exe" /T'
   Sleep 1000
 !macroend

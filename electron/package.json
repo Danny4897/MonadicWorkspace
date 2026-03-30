@@ -26,11 +26,14 @@
       "icon": "assets/icon.ico"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": false,
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "shortcutName": "MonadicWorkspace",
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true,
       "include": "installer.nsh"
     },
     "files": [
