@@ -22,19 +22,11 @@
     "copyright": "MIT © Danny4897",
     "icon": "assets/icon.png",
     "win": {
-      "target": "nsis",
+      "target": "portable",
       "icon": "assets/icon.ico"
     },
-    "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "shortcutName": "MonadicWorkspace",
-      "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true,
-      "runAfterFinish": true,
-      "include": "installer.nsh"
+    "portable": {
+      "artifactName": "MonadicWorkspace.exe"
     },
     "files": [
       "main.js",
