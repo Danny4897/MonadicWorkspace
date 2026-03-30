@@ -30,7 +30,8 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
-      "shortcutName": "MonadicWorkspace"
+      "shortcutName": "MonadicWorkspace",
+      "include": "installer.nsh"
     },
     "files": [
       "main.js",
