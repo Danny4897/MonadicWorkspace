@@ -13,7 +13,8 @@
   },
   "devDependencies": {
     "electron": "^29.0.0",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.0.0",
+    "png-to-ico": "^3.0.1"
   },
   "build": {
     "appId": "dev.danny4897.monadicworkspace",
@@ -22,12 +23,13 @@
     "icon": "assets/icon.png",
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "assets/icon.png",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
       "shortcutName": "MonadicWorkspace"
     },
     "files": [
