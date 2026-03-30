@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "install:all": "npm --prefix apps/dashboard install && npm --prefix apps/planner install && npm --prefix apps/studio install && npm --prefix packages/shared install",
+    "install:all": "npm --prefix apps/dashboard/backend install && npm --prefix apps/dashboard/frontend install && npm --prefix apps/planner/backend install && npm --prefix apps/planner/frontend install && npm --prefix apps/studio/backend install && npm --prefix apps/studio/frontend install && npm --prefix packages/shared install",
     "dev": "concurrently -n Dashboard,Planner,Studio -c cyan,yellow,magenta \"npm run dev --prefix apps/dashboard\" \"npm run dev --prefix apps/planner\" \"npm run dev --prefix apps/studio\"",
     "dev:dashboard": "npm run dev --prefix apps/dashboard",
     "dev:planner": "npm run dev --prefix apps/planner",
