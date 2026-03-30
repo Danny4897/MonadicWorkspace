@@ -1,0 +1,18 @@
+{
+  "name": "monadic-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix apps/dashboard install && npm --prefix apps/planner install && npm --prefix apps/studio install && npm --prefix packages/shared install",
+    "dev": "concurrently -n Dashboard,Planner,Studio -c cyan,yellow,magenta \"npm run dev --prefix apps/dashboard\" \"npm run dev --prefix apps/planner\" \"npm run dev --prefix apps/studio\"",
+    "dev:dashboard": "npm run dev --prefix apps/dashboard",
+    "dev:planner": "npm run dev --prefix apps/planner",
+    "dev:studio": "npm run dev --prefix apps/studio",
+    "build:all": "npm run build --prefix packages/shared && npm run build --prefix apps/dashboard && npm run build --prefix apps/planner && npm run build --prefix apps/studio",
+    "submodule:update": "git submodule update --remote --merge",
+    "status": "cd apps/agent-cli && dotnet run -- status"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,98 @@
+version: '3.9'
+
+services:
+
+  # ── MonadicDashboard ──────────────────────────────────────
+  dashboard-backend:
+    build:
+      context: ./apps/dashboard/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - PORT=3001
+      - NUGET_CACHE_TTL=${NUGET_CACHE_TTL:-300}
+      - GITHUB_CACHE_TTL=${GITHUB_CACHE_TTL:-60}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  dashboard-frontend:
+    build:
+      context: ./apps/dashboard/frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3001
+    ports:
+      - "5173:80"
+    depends_on:
+      dashboard-backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── MonadicPlanner ────────────────────────────────────────
+  planner-backend:
+    build:
+      context: ./apps/planner/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - planner-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  planner-frontend:
+    build:
+      context: ./apps/planner/frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3002
+    ports:
+      - "5174:80"
+    depends_on:
+      planner-backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── MonadicStudio ─────────────────────────────────────────
+  studio-backend:
+    build:
+      context: ./apps/studio/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    volumes:
+      - ${WORKSPACE_ROOT:-/workspace}:/workspace
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  studio-frontend:
+    build:
+      context: ./apps/studio/frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3003
+        - VITE_WS_URL=ws://localhost:3003
+    ports:
+      - "5175:80"
+    depends_on:
+      studio-backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  planner-data:
+    driver: local

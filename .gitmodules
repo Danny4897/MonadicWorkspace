@@ -1,0 +1,15 @@
+[submodule "apps/dashboard"]
+	path = apps/dashboard
+	url = https://github.com/Danny4897/MonadicDashboard
+[submodule "apps/planner"]
+	path = apps/planner
+	url = https://github.com/Danny4897/MonadicPlanner
+[submodule "apps/agent-cli"]
+	path = apps/agent-cli
+	url = https://github.com/Danny4897/MonadicAgent
+[submodule "apps/studio"]
+	path = apps/studio
+	url = https://github.com/Danny4897/MonadicStudio
+[submodule "packages/shared"]
+	path = packages/shared
+	url = https://github.com/Danny4897/MonadicSharedPackages
